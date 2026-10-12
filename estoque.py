@@ -83,7 +83,9 @@ def ler_motivo(mensagem):
 
 def movimentar_estoque(produtos, movimentacoes, tipo):
     """Solicita os dados de uma entrada ou saída e apresenta o resultado."""
-    titulo = "ENTRADA DE ESTOQUE" if tipo == "entrada" else "SAÍDA DE ESTOQUE"
+    titulo = (
+        "ENTRADA DE ESTOQUE" if tipo == "entrada" else "SAÍDA MANUAL DE ESTOQUE"
+    )
     print(f"\n--- {titulo} ---")
     codigo = input("Código do produto: ").strip()
     quantidade = ler_quantidade_positiva("Quantidade: ")
@@ -109,12 +111,95 @@ def consultar_saldo_no_menu(produtos):
     print(f"{produto['codigo']} - {produto['nome']} | Saldo: {saldo}")
 
 
+def exibir_movimentacao(produtos, movimentacao, indice):
+    """Exibe os campos de uma movimentação sem alterar os dados."""
+    produto = buscar_produto(produtos, movimentacao["codigo_produto"])
+    if produto is None:
+        identificacao = movimentacao["codigo_produto"]
+    else:
+        identificacao = f"{produto['codigo']} - {produto['nome']}"
+
+    print(
+        f"{indice} - Produto: {identificacao} | "
+        f"Tipo: {movimentacao['tipo']} | "
+        f"Quantidade: {movimentacao['quantidade']} | "
+        f"Motivo: {movimentacao['motivo']}"
+    )
+
+
+def exibir_historico(produtos, movimentacoes, codigo=None):
+    """Exibe todo o histórico ou somente as movimentações de um produto."""
+    codigo_filtrado = None
+    if codigo is not None:
+        produto = buscar_produto(produtos, codigo)
+        if produto is None:
+            print("Produto não encontrado.")
+            return
+        codigo_filtrado = produto["codigo"]
+
+    if not movimentacoes:
+        if codigo_filtrado is None:
+            print("Nenhuma movimentação registrada.")
+        else:
+            print("Nenhuma movimentação registrada para este produto.")
+        return
+
+    encontrou_movimentacao = False
+    for indice, movimentacao in enumerate(movimentacoes, start=1):
+        if (
+            codigo_filtrado is None
+            or movimentacao["codigo_produto"] == codigo_filtrado
+        ):
+            encontrou_movimentacao = True
+            exibir_movimentacao(produtos, movimentacao, indice)
+
+    if codigo_filtrado is not None and not encontrou_movimentacao:
+        print("Nenhuma movimentação registrada para este produto.")
+
+
+def consultar_historico_geral(produtos, movimentacoes):
+    """Exibe o histórico completo de movimentações."""
+    print("\n--- HISTÓRICO GERAL ---")
+    exibir_historico(produtos, movimentacoes)
+
+
+def consultar_historico_por_codigo(produtos, movimentacoes):
+    """Solicita um código e exibe seu histórico de movimentações."""
+    print("\n--- HISTÓRICO POR PRODUTO ---")
+    codigo = input("Código do produto: ").strip()
+    exibir_historico(produtos, movimentacoes, codigo)
+
+
+def exibir_produtos_abaixo_minimo(produtos):
+    """Exibe produtos com quantidade estritamente menor que o mínimo."""
+    print("\n--- PRODUTOS ABAIXO DO ESTOQUE MÍNIMO ---")
+    if not produtos:
+        print("Nenhum produto cadastrado.")
+        return
+
+    encontrou_produto = False
+    for produto in produtos:
+        if produto["quantidade"] < produto["estoque_minimo"]:
+            encontrou_produto = True
+            print(
+                f"{produto['codigo']} - {produto['nome']} | "
+                f"Saldo: {produto['quantidade']} | "
+                f"Estoque mínimo: {produto['estoque_minimo']}"
+            )
+
+    if not encontrou_produto:
+        print("Nenhum produto abaixo do estoque mínimo.")
+
+
 def exibir_menu_estoque():
     """Exibe as operações disponíveis para estoque."""
     print("\n=== ESTOQUE ===")
     print("1 - Registrar entrada")
-    print("2 - Registrar saída")
+    print("2 - Registrar saída manual")
     print("3 - Consultar saldo")
+    print("4 - Consultar histórico geral")
+    print("5 - Consultar histórico por produto")
+    print("6 - Listar produtos abaixo do estoque mínimo")
     print("0 - Voltar")
 
 
@@ -130,6 +215,12 @@ def menu_estoque(produtos, movimentacoes):
             movimentar_estoque(produtos, movimentacoes, "saida")
         elif opcao == "3":
             consultar_saldo_no_menu(produtos)
+        elif opcao == "4":
+            consultar_historico_geral(produtos, movimentacoes)
+        elif opcao == "5":
+            consultar_historico_por_codigo(produtos, movimentacoes)
+        elif opcao == "6":
+            exibir_produtos_abaixo_minimo(produtos)
         elif opcao == "0":
             break
         else:

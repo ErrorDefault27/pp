@@ -7,7 +7,7 @@ Atividade acadêmica de Paradigmas de Programação desenvolvida em Python 3. O 
 O projeto foi dividido em três áreas:
 
 - produtos: cadastro, listagem, consulta e alteração de nome, preço e estoque mínimo;
-- estoque: entradas, saídas, consulta de saldo e registro de movimentações;
+- estoque: entradas, saídas, consulta de saldo, histórico de movimentações e alerta de estoque mínimo;
 - vendas: registro e consulta de vendas.
 
 Nesta versão, a base do programa e os módulos de produtos e estoque estão implementados. O módulo de vendas possui somente um ponto de integração e informa ao usuário que ainda não foi implementado.
@@ -32,7 +32,7 @@ python3 main.py
 
 - `main.py`: cria uma única lista de produtos, uma de movimentações e uma de vendas, e controla o menu principal;
 - `produtos.py`: contém as funções do cadastro de produtos;
-- `estoque.py`: contém consulta de saldo e registro de entradas e saídas;
+- `estoque.py`: contém consulta de saldo, entradas, saídas, histórico e listagem de produtos abaixo do estoque mínimo;
 - `vendas.py`: ponto de integração reservado ao módulo de vendas.
 
 As três listas são criadas somente uma vez em `main.py`. Ao chamar cada menu, o programa passa essas mesmas listas como argumentos. Como listas e dicionários são mutáveis, as funções trabalham sobre os objetos compartilhados; nenhum módulo deve criar uma segunda lista para substituir a recebida. Assim, uma alteração válida feita por um módulo fica visível aos demais durante a mesma execução.
@@ -115,12 +115,36 @@ As funções `consultar_saldo`, `registrar_movimentacao` e `menu_estoque` estão
 ## Responsabilidades de integração
 
 - Integrante 1 — produtos: normalizar e manter códigos únicos, criar produtos com saldo zero, armazenar preços em centavos, permitir somente as alterações previstas no contrato e oferecer `buscar_produto` e `menu_produtos`.
-- Integrante 2 — estoque: consultar e alterar saldos, validar entradas e saídas, impedir saldo negativo e registrar movimentações somente após validação completa.
+- Integrante 2 — estoque: consultar e alterar saldos, validar entradas e saídas, impedir saldo negativo, registrar e consultar movimentações e listar produtos abaixo do estoque mínimo.
 - Integrante 3 — vendas: validar itens, calcular subtotais e total em centavos, usar a função de movimentação para efetuar as saídas e somente registrar uma venda quando toda a operação for válida; implementar `menu_vendas`.
 
 Antes de alterar dados, estoque e vendas devem concluir todas as validações necessárias. Em caso de falha, não devem deixar alterações parciais nas listas compartilhadas.
 
 O módulo de estoque usa `buscar_produto` para localizar códigos segundo a mesma normalização do cadastro. O módulo de vendas pode importar e chamar `consultar_saldo` e `registrar_movimentacao` diretamente, sem executar `menu_estoque`. Para retirar unidades de uma venda, deve usar o tipo `saida` e informar um motivo; uma falha retorna `(False, mensagem)` sem alterar o saldo nem o histórico.
+
+### Operações de estoque
+
+O módulo de estoque entrega as funções `consultar_saldo`, `registrar_movimentacao`, `exibir_historico`, `exibir_produtos_abaixo_minimo` e `menu_estoque`. As assinaturas compartilhadas de consulta, movimentação e menu permanecem conforme o contrato do projeto.
+
+O histórico usa os campos `codigo_produto`, `tipo`, `quantidade` e `motivo` definidos no contrato de movimentação. Ele pode ser consultado por completo ou filtrado pelo código normalizado de um produto. Consultas de saldo e histórico somente leem as listas compartilhadas.
+
+A listagem de estoque mínimo percorre os produtos e exibe somente aqueles cuja `quantidade` seja menor que `estoque_minimo`. Um saldo igual ao mínimo não é incluído.
+
+Reposições e saídas manuais representam apenas movimentações de unidades. Elas não calculam nem registram receita. Uma venda pode aparecer no mesmo histórico ao usar um motivo identificável:
+
+```python
+registrar_movimentacao(
+    produtos, movimentacoes, "P001", "entrada", 10, "Reposição"
+)
+registrar_movimentacao(
+    produtos, movimentacoes, "P001", "saida", 2, "Saída manual"
+)
+registrar_movimentacao(
+    produtos, movimentacoes, "P001", "saida", 1, "Venda 15"
+)
+```
+
+No fluxo imperativo do estoque, o `while` mantém o submenu em execução até a opção de voltar. Os laços `for` percorrem movimentações ou produtos, enquanto condições `if` selecionam o código solicitado, identificam listas vazias e verificam quais quantidades estão abaixo do mínimo.
 
 ## Equipe e contribuições
 
