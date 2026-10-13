@@ -186,35 +186,47 @@ def confirmar_venda(produtos, movimentacoes, vendas, carrinho):
             saldos_originais[codigo] = saldo
 
     indice_movimentacoes = len(movimentacoes)
+    indice_vendas = len(vendas)
     venda_id = _novo_id_venda(vendas)
     motivo = f"Venda {venda_id}"
 
-    for item in carrinho:
-        sucesso, mensagem = registrar_movimentacao(
-            produtos,
-            movimentacoes,
-            item["codigo_produto"],
-            "saida",
-            item["quantidade"],
-            motivo,
-        )
-        if not sucesso:
-            _restaurar_tentativa(
+    try:
+        for item in carrinho:
+            sucesso, mensagem = registrar_movimentacao(
                 produtos,
                 movimentacoes,
-                saldos_originais,
-                indice_movimentacoes,
+                item["codigo_produto"],
+                "saida",
+                item["quantidade"],
+                motivo,
             )
-            return False, f"Venda não confirmada: {mensagem}"
+            if not sucesso:
+                _restaurar_tentativa(
+                    produtos,
+                    movimentacoes,
+                    saldos_originais,
+                    indice_movimentacoes,
+                )
+                return False, f"Venda não confirmada: {mensagem}"
 
-    itens = _copiar_itens(carrinho)
-    vendas.append(
-        {
-            "id": venda_id,
-            "itens": itens,
-            "total_centavos": calcular_total(itens),
-        }
-    )
+        itens = _copiar_itens(carrinho)
+        vendas.append(
+            {
+                "id": venda_id,
+                "itens": itens,
+                "total_centavos": calcular_total(itens),
+            }
+        )
+    except Exception as erro:
+        _restaurar_tentativa(
+            produtos,
+            movimentacoes,
+            saldos_originais,
+            indice_movimentacoes,
+        )
+        del vendas[indice_vendas:]
+        return False, f"Venda não confirmada: falha inesperada ({erro})."
+
     carrinho.clear()
     return True, f"Venda {venda_id} registrada com sucesso."
 
