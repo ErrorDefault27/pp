@@ -204,4 +204,4 @@ A equipe decidiu dividir o sistema em módulos de produtos, estoque e vendas, ma
 
 ## Vídeo de apresentação
 
-Link do vídeo: [**\[PREENCHER\]**](https://youtu.be/XDnPRacHEd8)
+Link do vídeo: [**\[Link\]**](https://youtu.be/XDnPRacHEd8)
